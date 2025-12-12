@@ -8,6 +8,13 @@ zerohashes = [ZERO_BYTES32]
 for layer in range(1, 100):
     zerohashes.append(hash(zerohashes[layer - 1] + zerohashes[layer - 1]))
 
+# Log zerohashes for debugging
+print(f"\n=== Zerohashes (first 28 layers) ===")
+for i in range(min(28, len(zerohashes))):
+    print(f"zerohashes[{i}]: 0x{zerohashes[i].hex()}")
+print(f"Total zerohashes computed: {len(zerohashes)}")
+print("=" * 50)
+
 
 def calc_merkle_tree_from_leaves(values, layer_count=32):
     values = list(values)
@@ -61,19 +68,25 @@ def merkleize_chunks(chunks, limit=None):
     max_depth = (limit - 1).bit_length()
     tmp = [None for _ in range(max_depth + 1)]
 
+    # Merge chunk h at position i into the tree
     def merge(h, i):
         j = 0
         while True:
+            # Check bit j of i
+            # No sibling here
             if i & (1 << j) == 0:
                 if i == count and j < depth:
                     h = hash(
                         h + zerohashes[j]
                     )  # keep going if we are complementing the void to the next power of 2
                 else:
+                    # Break if nothing further ahead
                     break
+            # Sibling here, so combine and continue up
             else:
                 h = hash(tmp[j] + h)
             j += 1
+        # Update tree at depth j
         tmp[j] = h
 
     # merge in leaf by leaf.
